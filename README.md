@@ -1,3 +1,6 @@
+
+![MPlayer logo](https://www.qanonsec.com/images/i.php?/upload/2026/04/17/20260417091557-cd7a6235-xs.png)
+
 # mplayer3
 
 mplayer3 is a lightweight compatibility layer that preserves the old-school
