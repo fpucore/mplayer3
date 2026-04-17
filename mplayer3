@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+
+#
+# mplayer3
+#
+# Copyright (c) 2026, Chris McGimpsey-Jones (chrisjones.unixmen@gmail.com)
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <https://www.gnu.org/licenses/>.
+#
+
+import sys
+import subprocess
+import os
+import shutil
+
+class MPlayer3:
+    def __init__(self):
+        self.version_str = "mplayer3 v1.2"
+        self.mpv_path = shutil.which("mpv")
+        self.args = sys.argv[1:]
+        self.mpv_args = []
+        self.files = []
+        self.identify_mode = False
+
+        # MPlayer (Single-Dash) to MPV (Double-Dash) Map
+        # (mpv_opt, has_value)
+        self.map = {
+            "fs": ("fullscreen", False),
+            "ss": ("start", True),
+            "endpos": ("end", True),
+            "loop": ("loop", True),
+            "speed": ("speed", True),
+            "volume": ("volume", True),
+            "mute": ("mute", False),
+            "nosound": ("no-audio", False),
+            "novideo": ("no-video", False),
+            "ontop": ("ontop", False),
+            "title": ("title", True),
+            "geometry": ("geometry", True),
+            "sub": ("sub-file", True),
+            "playlist": ("playlist", True),
+            "shuffle": ("shuffle", False),
+            "quiet": ("really-quiet", False),
+            "really-quiet": ("really-quiet", False),
+            "vid": ("vid", True),
+            "aid": ("aid", True),
+            "sid": ("sid", True),
+        }
+
+    def print_version(self):
+        mpv_v = subprocess.run([self.mpv_path, "--version"], capture_output=True, text=True).stdout.splitlines()[0]
+        print(f"{self.version_str}")
+        print(f"Engine: {mpv_v}")
+        print(f"License: GNU GPL version 2 or later <https://gnu.org/licenses/gpl.html>")
+
+    def print_help(self):
+        print(f"{self.version_str}\n")
+        print("Usage: mplayer3 [mplayer-options] [mpv-options] [file|url]")
+        
+        print("\nClassic MPlayer Shorthand (Translated):")
+        for m_opt, (mpv_opt, has_val) in self.map.items():
+            suffix = " <val>" if has_val else ""
+            print(f"  -{m_opt.ljust(12)} -> --{mpv_opt}{suffix}")
+        
+        print("\nOther Standard Arguments:")
+        print("  -v             Verbose (MPlayer traditional)")
+        print("  -version       Print version info")
+        print("  -identify      Show file properties (legacy format)")
+        
+        print("\nNative MPV Engine Options (Pass-through):")
+        # Optimization: Just show the first few lines of MPV help to keep it clean
+        try:
+            mpv_help = subprocess.run([self.mpv_path, "--help"], capture_output=True, text=True).stdout
+            # Extract the 'General Options' section from mpv
+            lines = [l for l in mpv_help.splitlines() if l.strip().startswith("--")]
+            for l in lines[:15]: 
+                print(f"  {l}")
+            print("  ... (all other --mpv-style arguments are supported)")
+        except:
+            print("  Check 'man mpv' for full engine documentation.")
+
+    def process(self):
+        if not self.mpv_path:
+            print("Error: mpv not found.", file=sys.stderr); sys.exit(1)
+        
+        if not self.args:
+            self.print_help(); sys.exit(0)
+
+        # Intercept mplayer3-specific Meta commands
+        if "-version" in self.args:
+            self.print_version(); sys.exit(0)
+        if "-help" in self.args or "--help" in self.args:
+            self.print_help(); sys.exit(0)
+
+        idx = 0
+        while idx < len(self.args):
+            arg = self.args[idx]
+
+            if not arg.startswith("-"):
+                self.files.append(arg)
+            elif arg == "-v":
+                self.mpv_args.append("-v") # Keep single dash -v for mpv verbose
+            elif arg == "-identify":
+                self.identify_mode = True
+            else:
+                m_opt = arg.lstrip("-")
+                if m_opt in self.map:
+                    mpv_opt, has_val = self.map[m_opt]
+                    if has_val and idx + 1 < len(self.args):
+                        val = self.args[idx + 1]
+                        if m_opt == "loop" and val == "0": val = "inf"
+                        self.mpv_args.append(f"--{mpv_opt}={val}")
+                        idx += 1
+                    else:
+                        self.mpv_args.append(f"--{mpv_opt}")
+                else:
+                    # Generic translation: -some-argument -> --some-argument
+                    self.mpv_args.append(f"--{m_opt}")
+            idx += 1
+
+        if self.identify_mode:
+            # Simple identity emulation
+            subprocess.run([self.mpv_path, "--identify", "--frames=0", "--vo=null"] + self.mpv_args + self.files)
+        else:
+            os.execvp(self.mpv_path, [self.mpv_path] + self.mpv_args + self.files)
+
+if __name__ == "__main__":
+    MPlayer3().process()
