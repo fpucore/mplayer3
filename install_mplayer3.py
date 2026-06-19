@@ -120,8 +120,8 @@ def preflight():
     errors = []
     if os.geteuid() != 0:
         errors.append("Must be run as root. Use: sudo python3 install_mplayer3.py")
-    if not shutil.which("mpv"):
-        errors.append("mpv not found. Install it first: boxforge install mpv")
+    if not shutil.which("mpv3"):
+        errors.append("mpv3 not found. Install it first: boxforge install mpv")
     if not SOURCE_SCRIPT.exists():
         errors.append(f"Source script '{APP_NAME}' not found in the same directory as this installer.")
     if errors:
@@ -129,7 +129,7 @@ def preflight():
         for e in errors:
             print(f"  [ERROR] {e}")
         sys.exit(1)
-    print(f"  [OK] mpv found at : {shutil.which('mpv')}")
+    print(f"  [OK] mpv3 found at : {shutil.which('mpv3')}")
     print(f"  [OK] Source script: {SOURCE_SCRIPT}")
     print(f"  [OK] Config target: {CONF_DIR}")
 

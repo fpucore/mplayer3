@@ -26,8 +26,8 @@ import shutil
 
 class MPlayer3:
     def __init__(self):
-        self.version_str = "mplayer3 v1.2"
-        self.mpv_path = shutil.which("mpv")
+        self.version_str = "mplayer3 v1.3"
+        self.mpv_path = shutil.which("mpv3")
         self.args = sys.argv[1:]
         self.mpv_args = []
         self.files = []
