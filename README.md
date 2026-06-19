@@ -3,12 +3,13 @@
 
 # mplayer3
 
-mplayer3 is a lightweight compatibility layer that preserves the old-school
-[MPlayer](http://www.mplayerhq.hu/) command-line interface while using
-[mpv](https://mpv.io/) as its playback engine.
+mplayer3 is a fork of the [MPlayer](http://www.mplayerhq.hu/) project, rebuilt
+on top of a bundled fork of [mpv](https://mpv.io/) (called **mpv3**). It
+preserves the classic MPlayer command-line interface while running on a modern,
+maintained playback engine — full hardware acceleration, current codec support,
+and no behavioural surprises.
 
-It lets you keep your old habits without giving up modern performance,
-codec support, and hardware acceleration.
+One repo, one install, one philosophy: *mplayer in spirit, mpv in performance*.
 
 Released under GNU GPL.
 
@@ -17,11 +18,11 @@ Released under GNU GPL.
 ## ✨ Features
 
 - ✅ Classic `mplayer` CLI syntax (`-fs`, `-ss`, `-vo`, etc.)
-- ✅ Automatic translation to `mpv` arguments
-- ✅ Full support for native `mpv` arguments (`--vo=gpu`, etc.)
+- ✅ Automatic translation to `mpv3` arguments
+- ✅ Full support for native `mpv3` arguments (`--vo=gpu`, etc.)
 - ✅ Zero performance overhead
 - ✅ Works with existing scripts and workflows
-- ✅ Clean fallback: unknown arguments are passed through to `mpv`
+- ✅ Clean fallback: unknown arguments are passed through to `mpv3`
 
 ---
 
@@ -30,7 +31,10 @@ Released under GNU GPL.
 ### Requirements
 
 - Python 3
-- mpv installed and available in `PATH`
+- `meson` and `ninja`
+- A C compiler (e.g. `gcc` or `clang`) and the standard mpv build dependencies
+  (ffmpeg dev headers, libplacebo, libass, etc.). The installer does **not**
+  validate these — make sure they are in place before running it.
 
 ### Install
 
@@ -40,6 +44,8 @@ sudo python3 install_mplayer3.py
 ```
 
 This will:
+- Build the bundled `mpv3` engine from source (`mpv3/`) using meson, as your
+  invoking (non-root) user, and install it to `/usr/local/bin/mpv3`
 - Install `mplayer3` to `/usr/local/bin`
 - Create `~/.config/mpv/mpv.conf` (or safely append to an existing config)
 - Create `~/.config/mpv/input.conf` (if not already present)
@@ -84,13 +90,12 @@ Unknown arguments are automatically passed through:
 
 ## 🧠 Philosophy
 
-mplayer3 is:
+mplayer3 is a **fork** — of both MPlayer (in spirit and CLI) and mpv (in code and engine).
 
-- **Not a fork**
-- **Not a reimplementation**
-- **Not a replacement for mpv**
+It exists to give the classic MPlayer command-line interface a long-term home on top of a modern, maintained playback engine:
 
-It is a **compatibility layer**:
+- The `mplayer3` CLI wrapper preserves the old `-fs`, `-ss`, `-vo` style arguments, translating them into mpv equivalents — with full pass-through for native mpv options.
+- The bundled **mpv3** engine is a fork of [mpv](https://mpv.io/), shipped in-tree so the whole stack builds and installs from a single source of truth.
 
 > *mplayer in spirit, mpv in performance*
 
@@ -135,7 +140,7 @@ mplayer3 -fs -ss 90 movie.mkv
 
 ## 🧩 Status
 
-Version 1.2 (Stable)
+Version 1.3 (Stable)
 
 ---
 

@@ -4,6 +4,7 @@ import os
 import sys
 import pwd
 import shutil
+import subprocess
 from pathlib import Path
 
 # --- Paths ---
@@ -11,12 +12,21 @@ APP_NAME        = "mplayer3"
 INSTALL_TARGET  = Path("/usr/local/bin") / APP_NAME
 SOURCE_SCRIPT   = Path(__file__).parent / APP_NAME
 
+# mpv3 (bundled engine) source tree and build dir
+MPV3_SRC_DIR    = Path(__file__).parent / "mpv3"
+MPV3_BUILD_DIR  = MPV3_SRC_DIR / "build"
+
 # Resolve real user home even when run via sudo
 sudo_user = os.environ.get("SUDO_USER")
 if sudo_user:
-    REAL_HOME = Path(pwd.getpwnam(sudo_user).pw_dir)
+    _pw = pwd.getpwnam(sudo_user)
+    REAL_HOME = Path(_pw.pw_dir)
+    REAL_UID  = _pw.pw_uid
+    REAL_GID  = _pw.pw_gid
 else:
     REAL_HOME = Path.home()
+    REAL_UID  = os.getuid()
+    REAL_GID  = os.getgid()
 
 CONF_DIR        = REAL_HOME / ".config" / "mpv"
 MPV_CONF_FILE   = CONF_DIR / "mpv.conf"
@@ -116,22 +126,78 @@ def write_if_missing(path, content):
             f.write(content)
         print(f"  [CREATED]  {path}")
 
+# --- Build helpers ---
+def _demote_to_user():
+    """preexec_fn used by run_as_user: drop root -> SUDO_USER for the child process."""
+    os.setgid(REAL_GID)
+    os.setuid(REAL_UID)
+
+def run_as_user(cmd, cwd, label):
+    """
+    Run a command as the original invoking user (SUDO_USER), not as root.
+    Falls back to current user if SUDO_USER is unset.
+    Streams stdout/stderr live. Exits the installer on failure.
+    """
+    print(f"  [{label}] $ {' '.join(cmd)}   (as user: {sudo_user or os.environ.get('USER', 'current')})")
+
+    env = os.environ.copy()
+    if sudo_user:
+        env["HOME"]    = str(REAL_HOME)
+        env["USER"]    = sudo_user
+        env["LOGNAME"] = sudo_user
+        # Keep PATH but ensure /usr/local/bin and /usr/bin are present
+        env.setdefault("PATH", "/usr/local/bin:/usr/bin:/bin")
+
+    try:
+        if sudo_user and os.geteuid() == 0:
+            result = subprocess.run(cmd, cwd=str(cwd), env=env, preexec_fn=_demote_to_user)
+        else:
+            result = subprocess.run(cmd, cwd=str(cwd), env=env)
+    except FileNotFoundError as e:
+        print(f"  [ERROR] Command not found: {e}")
+        sys.exit(1)
+
+    if result.returncode != 0:
+        print(f"  [ERROR] {label} step failed (exit code {result.returncode}).")
+        print(f"          Make sure all mpv3 build dependencies are installed.")
+        sys.exit(result.returncode)
+
+def run_as_root(cmd, cwd, label):
+    """Run a command as root (the current euid). Streams output live."""
+    print(f"  [{label}] $ {' '.join(cmd)}   (as root)")
+    try:
+        result = subprocess.run(cmd, cwd=str(cwd))
+    except FileNotFoundError as e:
+        print(f"  [ERROR] Command not found: {e}")
+        sys.exit(1)
+
+    if result.returncode != 0:
+        print(f"  [ERROR] {label} step failed (exit code {result.returncode}).")
+        sys.exit(result.returncode)
+
 def preflight():
     errors = []
     if os.geteuid() != 0:
         errors.append("Must be run as root. Use: sudo python3 install_mplayer3.py")
-    if not shutil.which("mpv3"):
-        errors.append("mpv3 not found. Install it first: boxforge install mpv")
     if not SOURCE_SCRIPT.exists():
         errors.append(f"Source script '{APP_NAME}' not found in the same directory as this installer.")
+    if not (MPV3_SRC_DIR / "meson.build").exists():
+        errors.append(f"mpv3 source tree not found at {MPV3_SRC_DIR} (expected meson.build).")
+    if not shutil.which("meson"):
+        errors.append("meson not found on PATH. Install meson before running this installer.")
+    if not shutil.which("ninja"):
+        errors.append("ninja not found on PATH. Install ninja before running this installer.")
     if errors:
         print("\nPre-install checks failed:")
         for e in errors:
             print(f"  [ERROR] {e}")
         sys.exit(1)
-    print(f"  [OK] mpv3 found at : {shutil.which('mpv3')}")
-    print(f"  [OK] Source script: {SOURCE_SCRIPT}")
-    print(f"  [OK] Config target: {CONF_DIR}")
+    print(f"  [OK] Source script : {SOURCE_SCRIPT}")
+    print(f"  [OK] mpv3 source   : {MPV3_SRC_DIR}")
+    print(f"  [OK] meson         : {shutil.which('meson')}")
+    print(f"  [OK] ninja         : {shutil.which('ninja')}")
+    print(f"  [OK] Config target : {CONF_DIR}")
+    print(f"  [OK] Build user    : {sudo_user or os.environ.get('USER', 'current')}")
 
 # --- Main ---
 def main():
@@ -139,20 +205,40 @@ def main():
     print(f"  {APP_NAME} Installer")
     print(f"{'='*52}")
 
-    print("\n[1/4] Pre-install checks...")
+    print("\n[1/5] Pre-install checks...")
     preflight()
 
-    print(f"\n[2/4] Setting up ~/.config/mpv/ ...")
+    print(f"\n[2/5] Configuring mpv3 build (meson setup)...")
+    run_as_user(["meson", "setup", "build"], cwd=MPV3_SRC_DIR, label="SETUP  ")
+
+    print(f"\n[3/5] Compiling and installing mpv3 engine...")
+    run_as_user(["meson", "compile", "-C", "build"], cwd=MPV3_SRC_DIR, label="COMPILE")
+    run_as_root(["meson", "install", "-C", "build"], cwd=MPV3_SRC_DIR, label="INSTALL")
+    mpv3_path = shutil.which("mpv3")
+    if mpv3_path:
+        print(f"  [OK] mpv3 installed: {mpv3_path}")
+    else:
+        print(f"  [WARN] mpv3 not found on PATH after install. Check meson install prefix.")
+
+    print(f"\n[4/5] Setting up ~/.config/mpv/ ...")
     CONF_DIR.mkdir(parents=True, exist_ok=True)
     append_if_missing(MPV_CONF_FILE,   MPV_CONF,   MPLAYER3_MARKER)
     write_if_missing(INPUT_CONF_FILE,  INPUT_CONF)
+    # Make sure newly-created config files are owned by the real user, not root
+    if sudo_user:
+        for p in (CONF_DIR, MPV_CONF_FILE, INPUT_CONF_FILE):
+            try:
+                if p.exists():
+                    os.chown(p, REAL_UID, REAL_GID)
+            except OSError:
+                pass
 
-    print(f"\n[3/4] Installing {APP_NAME} to {INSTALL_TARGET} ...")
+    print(f"\n[5/5] Installing {APP_NAME} to {INSTALL_TARGET} ...")
     shutil.copy2(SOURCE_SCRIPT, INSTALL_TARGET)
     os.chmod(INSTALL_TARGET, 0o755)
     print(f"  [OK] Installed: {INSTALL_TARGET}")
 
-    print(f"\n[4/4] Done.")
+    print(f"\nDone.")
     print(f"{'='*52}")
     print(f"  mplayer3 is ready. Try:")
     print(f"    mplayer3 -help")
