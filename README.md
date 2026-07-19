@@ -82,6 +82,7 @@ mplayer3 --no-ram-cache movie.mkv
 - ✅ Persistent disk cache for instant start and smooth repeat playback
 - ✅ Automatic dual-layer caching (Disk + RAM)
 - ✅ Zero performance overhead
+- ✅ X Server purity (Wayland disabled by default)
 - ✅ Works with existing scripts and workflows
 
 ---
