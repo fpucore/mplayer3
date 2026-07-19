@@ -8,7 +8,7 @@
 
 --[[
 To configure this script use file autoload.conf in directory script-opts (the "script-opts"
-directory must be in the mpv configuration directory, typically ~/.config/mpv/).
+directory must be in the mpv configuration directory, typically ~/.config/mplayer3/).
 
 Option `ignore_patterns` is a comma-separated list of patterns (see lua.org/pil/20.2.html).
 Additionally to the standard lua patterns, you can also escape commas with `%`,

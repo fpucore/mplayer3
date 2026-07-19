@@ -1,9 +1,6 @@
-mpv
-###
+mplayer3
 
-##############
-a media player
-##############
+mplayer3 is forked from the MPlayer and mpv projects.
 
 :Copyright: GPLv2+
 :Manual section: 1
@@ -14,33 +11,29 @@ a media player
 SYNOPSIS
 ========
 
-| **mpv** [options] [file|URL|PLAYLIST|-]
-| **mpv** [options] files
+| **mplayer3** [options] [file|URL|PLAYLIST|-]
+| **mplayer3** [options] files
 
 DESCRIPTION
 ===========
 
-**mpv** is a media player based on MPlayer and mplayer2. It supports a wide variety of video
-file formats, audio and video codecs, and subtitle types. Special input URL
-types are available to read input from a variety of sources other than disk
-files. Depending on platform, a variety of different video and audio output
-methods are supported.
+The project preserves the classic MPlayer command-line interface while running on a modern, properly 
+engineered and maintained playback engine, keeping full hardware acceleration, codec support and 
+MPlayer compatibility.
 
-Usage examples to get you started quickly can be found at the end of this man
-page.
-
+Released under GNU GPL.
 
 INTERACTIVE CONTROL
 ===================
 
-mpv has a fully configurable, command-driven control layer which allows you
-to control mpv using keyboard, mouse, or remote control (there is no
+mplayer3 has a fully configurable, command-driven control layer which allows you
+to control mplayer3 using keyboard, mouse, or remote control (there is no
 LIRC support - configure remotes as input devices instead).
 
 See the ``--input-`` options for ways to customize it.
 
 The following listings are not necessarily complete. See ``etc/input.conf``
-in the mpv source files for a list of default bindings. User ``input.conf``
+in the mplayer3 source files for a list of default bindings. User ``input.conf``
 files and Lua scripts can define additional key bindings.
 
 See `COMMAND INTERFACE`_ and `Key names`_ sections for more details on
@@ -380,7 +373,7 @@ ZOOMIN and ZOOMOUT
     Change video zoom.
 
 If you miss some older key bindings, look at ``etc/restore-old-bindings.conf``
-in the mpv git repository.
+in the mplayer3 git repository.
 
 Mouse Control
 -------------
@@ -437,15 +430,15 @@ mostly  for compatibility with MPlayer. Using these should be avoided. Their
 semantics can change any time in the future.
 
 For example, the alternative syntax will consider an argument following the
-option a filename. ``mpv -fs no`` will attempt to play a file named ``no``,
+option a filename. ``mplayer3 -fs no`` will attempt to play a file named ``no``,
 because ``--fs`` is a flag option that requires no parameter. If an option
 changes and its parameter becomes optional, then a command line using the
 alternative syntax will break.
 
-For options starting with ``--``, mpv expects that you pass the option value
-after a ``=``. For example, ``mpv --log-file f.txt`` will fail, as
+For options starting with ``--``, mplayer3 expects that you pass the option value
+after a ``=``. For example, ``mplayer3 --log-file f.txt`` will fail, as
 ``--log-file`` expects an option value, and ``f.txt`` is simply considered a
-normal file to be played (as in ``mpv f.txt``).
+normal file to be played (as in ``mplayer3 f.txt``).
 
 The future plan is that ``-option value`` will not work anymore, and options
 with a single ``-`` behave the same as ``--`` options.
@@ -454,10 +447,10 @@ Escaping spaces and other special characters
 --------------------------------------------
 
 Keep in mind that the shell will partially parse and mangle the arguments you
-pass to mpv. For example, you might need to quote or escape options and
+pass to mplayer3. For example, you might need to quote or escape options and
 filenames:
 
-    ``mpv "filename with spaces.mkv" --title="window title"``
+    ``mplayer3 "filename with spaces.mkv" --title="window title"``
 
 It gets more complicated if the suboption parser is involved. The suboption
 parser puts several options into a single string, and passes them to a
@@ -469,17 +462,17 @@ Additionally, there is a special form of quoting with ``%n%`` described below.
 
 For example, assume the hypothetical ``foo`` filter can take multiple options:
 
-    ``mpv test.mkv --vf=foo:option1=value1:option2:option3=value3,bar``
+    ``mplayer3 test.mkv --vf=foo:option1=value1:option2:option3=value3,bar``
 
 This passes ``option1`` and ``option3`` to the ``foo`` filter, with ``option2``
 as flag (implicitly ``option2=yes``), and adds a ``bar`` filter after that. If
 an option contains spaces or characters like ``,`` or ``:``, you need to quote
 them:
 
-    ``mpv '--vf=foo:option1="option value with spaces",bar'``
+    ``mplayer3 '--vf=foo:option1="option value with spaces",bar'``
 
 Shells may actually strip some quotes from the string passed to the commandline,
-so the example quotes the string twice, ensuring that mpv receives the ``"``
+so the example quotes the string twice, ensuring that mplayer3 receives the ``"``
 quotes.
 
 The ``[...]`` form of quotes wraps everything between ``[`` and ``]``. It's
@@ -497,11 +490,11 @@ It is started with ``%`` and has the following format::
 
 .. admonition:: Examples
 
-    ``mpv '--vf=foo:option1=%11%quoted text' test.avi``
+    ``mplayer3 '--vf=foo:option1=%11%quoted text' test.avi``
 
     Or in a script:
 
-    ``mpv --vf=foo:option1=%`expr length "$NAME"`%"$NAME" test.avi``
+    ``mplayer3 --vf=foo:option1=%`expr length "$NAME"`%"$NAME" test.avi``
 
 Note: where applicable with JSON-IPC, ``%n%`` is the length in UTF-8 bytes,
 after decoding the JSON data.
@@ -517,15 +510,15 @@ of maps and arrays.
 Paths
 -----
 
-Some care must be taken when passing arbitrary paths and filenames to mpv. For
+Some care must be taken when passing arbitrary paths and filenames to mplayer3. For
 example, paths starting with ``-`` will be interpreted as options. Likewise,
 if a path contains the sequence ``://``, the string before that might be
 interpreted as protocol prefix, even though ``://`` can be part of a legal
 UNIX path. To avoid problems with arbitrary paths, you should be sure that
-absolute paths passed to mpv start with ``/``, and prefix relative paths with
+absolute paths passed to mplayer3 start with ``/``, and prefix relative paths with
 ``./``.
 
-URLs that are passed to mpv should be percent-encoded for it to work reliably.
+URLs that are passed to mplayer3 should be percent-encoded for it to work reliably.
 There are some heuristics in place that tries to automatically do it, but these
 heuristics are not foolproof. For example, in order to play a file literally
 named ``foo%20.mp4``, using ``http://localhost/foo%20.mp4`` without any
@@ -535,13 +528,13 @@ percent-encoding will not work. Percent-encoding it as
 Using the ``file://`` pseudo-protocol is discouraged, because it involves
 strange URL unescaping rules.
 
-The name ``-`` itself is interpreted as stdin, and will cause mpv to disable
+The name ``-`` itself is interpreted as stdin, and will cause mplayer3 to disable
 console controls. (Which makes it suitable for playing data piped to stdin.)
 
-The special argument ``--`` can be used to stop mpv from interpreting the
+The special argument ``--`` can be used to stop mplayer3 from interpreting the
 following arguments as options.
 
-For paths passed to mpv suboptions (options that have multiple `:` and
+For paths passed to mplayer3 suboptions (options that have multiple `:` and
 `,`-separated values), the situation is further complicated by the need to
 escape special characters. To work around this, the path can instead be wrapped
 in the "fixed-length" syntax, e.g. ``%n%string_of_length_n`` (see above).
@@ -554,9 +547,9 @@ The same applies when you're using the scripting API, where you should avoid usi
 ``mp.command``, and instead prefer using "separate parameter" APIs, such as
 ``mp.commandv`` and ``mp.command_native``.
 
-Some mpv options will interpret special meanings for paths starting with ``~``,
+Some mplayer3 options will interpret special meanings for paths starting with ``~``,
 making it easy to dynamically find special directories, such as referring to the
-current user's home directory or the mpv configuration directory.
+current user's home directory or the mplayer3 configuration directory.
 
 When using the special ``~`` prefix, there must always be a trailing ``/`` after
 the special path prefix. In other words, ``~`` doesn't work, but ``~/`` will work.
@@ -582,19 +575,19 @@ Name             Meaning
 ================ ===============================================================
 ``~/``           The current user's home directory (equivalent to ``~/`` and
                  ``$HOME/`` in terminal environments).
-``~~/``          If the sub-path exists in any of mpv's config directories, then
+``~~/``          If the sub-path exists in any of mplayer3's config directories, then
                  the path of the existing file/dir is returned. Otherwise this
                  is equivalent to ``~~home/``.
-``~~home/``      mpv's config dir (for example ``~/.config/mpv/``).
-``~~global/``    The global config path (such as ``/etc/mpv``), if available
+``~~home/``      mplayer3's config dir (for example ``~/.config/mplayer3/``).
+``~~global/``    The global config path (such as ``/etc/mplayer3``), if available
                  (not on win32).
 ``~~osxbundle/`` The macOS bundle resource path (macOS only).
 ``~~desktop/``   The path to the desktop.
-``~~exe_dir/``   The path to the directory containing ``mpv.exe`` (for config
+``~~exe_dir/``   The path to the directory containing ``mplayer3.exe`` (for config
                  file purposes, ``$MPV_HOME`` will override this) (win32 only).
-``~~cache/``     The path to application cache data (``~/.cache/mpv/``).
+``~~cache/``     The path to application cache data (``~/.cache/mplayer3/``).
                  On some platforms, this will be the same as ``~~home/``.
-``~~state/``     The path to application state data (``~/.local/state/mpv/``).
+``~~state/``     The path to application state data (``~/.local/state/mplayer3/``).
                  On some platforms, this will be the same as ``~~home/``.
 ``~~old_home/``  Do not use.
 ================ ===============================================================
@@ -606,7 +599,7 @@ Per-File Options
 When playing multiple files, any option given on the command line usually
 affects all files. Example::
 
-    mpv --a file1.mkv --b file2.mkv --c
+    mplayer3 --a file1.mkv --b file2.mkv --c
 
 =============== ===========================
 File            Active options
@@ -624,7 +617,7 @@ Sometimes, it is useful to change options per-file. This can be achieved by
 adding the special per-file markers ``--{`` and ``--}``. (Note that you must
 escape these on some shells.) Example::
 
-    mpv --a file1.mkv --b --\{ --c file2.mkv --d file3.mkv --e --\} file4.mkv --f
+    mplayer3 --a file1.mkv --b --\{ --c file2.mkv --d file3.mkv --e --\} file4.mkv --f
 
 =============== ===========================
 File            Active options
@@ -751,9 +744,9 @@ Location and Syntax
 -------------------
 
 You can put all of the options in configuration files which will be read every
-time mpv is run. The system-wide configuration file 'mpv.conf' is in your
-configuration directory (e.g. ``/etc/mpv`` or ``/usr/local/etc/mpv``), the
-user-specific one is ``~/.config/mpv/mpv.conf``. For details and platform
+time mplayer3 is run. The system-wide configuration file 'mplayer3.conf' is in your
+configuration directory (e.g. ``/etc/mplayer3`` or ``/usr/local/etc/mplayer3``), the
+user-specific one is ``~/.config/mplayer3/mplayer3.conf``. For details and platform
 specifics (in particular Windows paths) see the `FILES`_ section.
 
 User-specific options override system-wide options and options given on the
@@ -808,13 +801,13 @@ File-specific Configuration Files
 You can also write file-specific configuration files. If you wish to have a
 configuration file for a file called 'video.avi', create a file named
 'video.avi.conf' with the file-specific options in it and put it in
-``~/.config/mpv/``. You can also put the configuration file in the same directory
+``~/.config/mplayer3/``. You can also put the configuration file in the same directory
 as the file to be played. Both require you to set the ``--use-filedir-conf``
 option (either on the command line or in your global config file). If a
 file-specific configuration file is found in the same directory, no
-file-specific configuration is loaded from ``~/.config/mpv``. In addition, the
+file-specific configuration is loaded from ``~/.config/mplayer3``. In addition, the
 ``--use-filedir-conf`` option enables directory-specific configuration files.
-For this, mpv first tries to load a mpv.conf from the same directory
+For this, mplayer3 first tries to load a mplayer3.conf from the same directory
 as the file played and then tries to load any file-specific configuration.
 
 
@@ -833,7 +826,7 @@ profile with ``--show-profile=<name>`` (replace ``<name>`` with the profile
 name). You can apply profiles on start with the ``--profile=<name>`` option,
 or at runtime with the ``apply-profile <name>`` command.
 
-.. admonition:: Example mpv config file with profiles
+.. admonition:: Example mplayer3 config file with profiles
 
     ::
 
@@ -940,7 +933,7 @@ errors or evaluates as falsy, the profile is not applied. This Lua code
 execution is not sandboxed.
 
 Any variables in condition expressions can reference properties. If an
-identifier is not already defined by Lua or mpv, it is interpreted as property.
+identifier is not already defined by Lua or mplayer3, it is interpreted as property.
 For example, ``pause`` would return the current pause status. You cannot
 reference properties with ``-`` this way since that would denote a subtraction,
 but if the variable name contains any ``_`` characters, they are turned into
@@ -1031,8 +1024,8 @@ things:
     Every Lua function has an environment table. This is used for identifier
     access. There is no named Lua symbol for it; it is implicit.
 
-    The environment does "magic" accesses to mpv properties. If an identifier
-    is not already defined in ``_G``, it retrieves the mpv property of the same
+    The environment does "magic" accesses to mplayer3 properties. If an identifier
+    is not already defined in ``_G``, it retrieves the mplayer3 property of the same
     name. Any occurrences of ``_`` in the name are replaced with ``-`` before
     reading the property. The returned value is as retrieved by
     ``mp.get_property_native(name)``. Internally, a cache of property values,
@@ -1063,13 +1056,13 @@ things:
     The "magic" tables mentioned above use this function as backend. It does not
     perform the ``_`` transliteration.
 
-In addition, the same environment as in a blank mpv Lua script is present. For
+In addition, the same environment as in a blank mplayer3 Lua script is present. For
 example, ``math`` is defined and gives access to the Lua standard math library.
 
 .. warning::
 
     This feature is subject to change indefinitely. You might be forced to
-    adjust your profiles on mpv updates.
+    adjust your profiles on mplayer3 updates.
 
 Legacy auto profiles
 --------------------
@@ -1093,10 +1086,10 @@ and ``extension`` for the extension of the path of the currently played file
 This feature is very limited, and is considered soft-deprecated. Use conditional
 auto profiles.
 
-Using mpv from other programs or scripts
+Using mplayer3 from other programs or scripts
 ========================================
 
-There are three choices for using mpv from other programs or scripts:
+There are three choices for using mplayer3 from other programs or scripts:
 
     1. Calling it as UNIX process. If you do this, *do not parse terminal output*.
        The terminal output is intended for humans, and may change any time. In
@@ -1104,20 +1097,20 @@ There are three choices for using mpv from other programs or scripts:
        cannot be guaranteed.
 
        Your code should work even if you pass ``--terminal=no``. Do not attempt
-       to simulate user input by sending terminal control codes to mpv's stdin.
+       to simulate user input by sending terminal control codes to mplayer3's stdin.
        If you need interactive control, using ``--input-ipc-server`` or
        ``--input-ipc-client`` is recommended. This gives you access to the
        `JSON IPC`_  over unix domain sockets (or named pipes on Windows).
 
        Depending on what you do, passing ``--no-config`` or ``--config-dir`` may
-       be a good idea to avoid conflicts with the normal mpv user configuration
+       be a good idea to avoid conflicts with the normal mplayer3 user configuration
        intended for CLI playback.
 
        Using ``--input-ipc-server`` or ``--input-ipc-client`` is also suitable for
        purposes like remote control (however, the IPC protocol itself is not
        "secure" and not intended to be so).
 
-    2. Using libmpv. This is generally recommended when mpv is used as playback
+    2. Using libmpv. This is generally recommended when mplayer3 is used as playback
        backend for a completely different application. The provided C API is
        very close to CLI mechanisms and the scripting API.
 
@@ -1129,7 +1122,7 @@ There are three choices for using mpv from other programs or scripts:
 
     3. As a user script (`LUA SCRIPTING`_, `JAVASCRIPT`_, `C PLUGINS`_). This is
        recommended when the goal is to "enhance" the CLI player. Scripts get
-       access to the entire client API of mpv.
+       access to the entire client API of mplayer3.
 
        This is the standard way to create third-party extensions for the player.
 
@@ -1143,7 +1136,7 @@ TAKING SCREENSHOTS
 
 Screenshots of the currently played file can be taken using the 'screenshot'
 input mode command, which is by default bound to the ``s`` key. Files named
-``mpv-shotNNNN.jpg`` will be saved in the working directory, using the first
+``mplayer3-shotNNNN.jpg`` will be saved in the working directory, using the first
 available number - no files will be overwritten. In pseudo-GUI mode, the
 screenshot will be saved somewhere else. See `PSEUDO GUI MODE`_.
 
@@ -1152,12 +1145,12 @@ video filter chain and subtitles. By default, ``S`` takes screenshots without
 subtitles, while ``s`` includes subtitles.
 
 Unlike with MPlayer, the ``screenshot`` video filter is not required. This
-filter was never required in mpv, and has been removed.
+filter was never required in mplayer3, and has been removed.
 
 TERMINAL STATUS LINE
 ====================
 
-During playback, mpv shows the playback status on the terminal. It looks like
+During playback, mplayer3 shows the playback status on the terminal. It looks like
 something like this:
 
     ``AV: 00:03:12 / 00:24:25 (13%) A-V: -0.000``
@@ -1210,7 +1203,7 @@ listed.
 LOW LATENCY PLAYBACK
 ====================
 
-mpv is optimized for normal video playback, meaning it actually tries to buffer
+mplayer3 is optimized for normal video playback, meaning it actually tries to buffer
 as much data as it seems to make sense. This will increase latency. Reducing
 latency is possible only by specifically disabling features which increase
 latency.
@@ -1218,7 +1211,7 @@ latency.
 The builtin ``low-latency`` profile tries to apply some of the options which can
 reduce latency. You can use  ``--profile=low-latency`` to apply all of them. You
 can list the contents with ``--show-profile=low-latency`` (some of the options
-are quite obscure, and may change every mpv release).
+are quite obscure, and may change every mplayer3 release).
 
 Be aware that some of the options can reduce playback quality.
 
@@ -1249,27 +1242,27 @@ Additional options that can be tried:
 RESUMING PLAYBACK
 =================
 
-mpv is capable of storing the playback position of the currently playing file
+mplayer3 is capable of storing the playback position of the currently playing file
 and resume from there the next time that file is played. This is done with the
 commands ``quit-watch-later`` (bound to Shift+Q by default) and
 ``write-watch-later-config``, and with the ``--save-position-on-quit`` option.
 
 The difference between always quitting with a key bound to ``quit-watch-later``
 and using ``--save-position-on-quit`` is that the latter will save the playback
-position even when mpv is closed with a method other than a keybinding, such as
-clicking the close button in the window title bar. However if mpv is terminated
+position even when mplayer3 is closed with a method other than a keybinding, such as
+clicking the close button in the window title bar. However if mplayer3 is terminated
 abruptly and doesn't have the time to save, then the position will not be saved.
-For example, if you shutdown your system without closing mpv beforehand.
+For example, if you shutdown your system without closing mplayer3 beforehand.
 
-mpv also stores options other than the playback position when they have been
+mplayer3 also stores options other than the playback position when they have been
 modified after playback began, for example the volume and selected audio/subtitles,
 and restores their values the next time the file is played. Which options are
 saved can be configured with the ``--watch-later-options`` option.
 
-When playing multiple playlist entries, mpv checks if one them has a resume
+When playing multiple playlist entries, mplayer3 checks if one them has a resume
 config file associated, and if it finds one it restarts playback from it. For
 example, if you use ``quit-watch-later`` on the 5th episode of a show, and
-later play all the episodes, mpv will automatically resume playback from
+later play all the episodes, mplayer3 will automatically resume playback from
 episode 5.
 
 More options to configure this functionality are listed in `Watch Later`_.
@@ -1277,16 +1270,16 @@ More options to configure this functionality are listed in `Watch Later`_.
 PROTOCOLS
 =========
 
-``mpv://...``
+``mplayer3://...``
 
-    mpv protocol. This is used for starting mpv from URL handler. The protocol
+    mplayer3 protocol. This is used for starting mplayer3 from URL handler. The protocol
     is stripped and the rest is passed to the player as a normal open argument.
     Only safe network protocols are allowed to be opened this way.
 
 ``http://...``, ``https://``, ...
 
     Many network protocols are supported, but the protocol prefix must always
-    be specified. mpv will never attempt to guess whether a filename is
+    be specified. mplayer3 will never attempt to guess whether a filename is
     actually a network address. A protocol prefix is always required.
 
     Note that not all prefixes are documented here. Undocumented prefixes are
@@ -1322,7 +1315,7 @@ PROTOCOLS
 
     ``title`` can be: ``longest`` or ``first`` (selects the default
     playlist); ``mpls/<number>`` (selects <number>.mpls playlist);
-    ``<number>`` (select playlist with the same index). mpv will list
+    ``<number>`` (select playlist with the same index). mplayer3 will list
     the available playlists on loading.
 
     ``bluray://`` is an alias.
@@ -1366,7 +1359,7 @@ PROTOCOLS
 
         ::
 
-            mpv cdda:// --start=#4 --end=#6
+            mplayer3 cdda:// --start=#4 --end=#6
 
         This will start from track 4, play track 5, and then end.
 
@@ -1385,7 +1378,7 @@ PROTOCOLS
 
         ::
 
-            mpv av://v4l2:/dev/video0 --profile=low-latency --untimed
+            mplayer3 av://v4l2:/dev/video0 --profile=low-latency --untimed
 
         This plays video from the first v4l input with nearly the lowest latency
         possible. It's a good replacement for the removed ``tv://`` input.
@@ -1411,14 +1404,14 @@ PROTOCOLS
     Using this is still a bit of a bad idea, because there is no way to detect
     if a file is actually being appended, or if it's still written. If you're
     trying to play the  output of some program, consider using a pipe
-    (``something | mpv -``). If it really has to be a file on disk, use tail to
-    make it wait forever, e.g. ``tail -f -c +0 file.mkv | mpv -``.
+    (``something | mplayer3 -``). If it really has to be a file on disk, use tail to
+    make it wait forever, e.g. ``tail -f -c +0 file.mkv | mplayer3 -``.
 
 ``fd://123``
 
     Read data from the given file descriptor (for example 123). This is similar
     to piping data to stdin via ``-``, but can use an arbitrary file descriptor.
-    mpv may modify some file descriptor properties when the stream layer "opens"
+    mplayer3 may modify some file descriptor properties when the stream layer "opens"
     it.
 
 ``fdclose://123``
@@ -1426,7 +1419,7 @@ PROTOCOLS
     Like ``fd://``, but the file descriptor is closed after use. When using this
     you need to ensure that the same fd URL will only be used once.
 
-``edl://[edl specification as in edl-mpv.rst]``
+``edl://[edl specification as in edl-mplayer3.rst]``
 
     Stitch together parts of multiple files and play them.
 
@@ -1445,21 +1438,21 @@ PROTOCOLS
 
         ::
 
-            mpv slice://1g-2g@cap.ts
+            mplayer3 slice://1g-2g@cap.ts
 
         This starts reading from cap.ts after seeking 1 GiB, then
         reads until reaching 2 GiB or end of file.
 
         ::
 
-            mpv slice://1g-+2g@cap.ts
+            mplayer3 slice://1g-+2g@cap.ts
 
         This starts reading from cap.ts after seeking 1 GiB, then
         reads until reaching 3 GiB or end of file.
 
         ::
 
-            mpv slice://100m@appending://cap.ts
+            mplayer3 slice://100m@appending://cap.ts
 
         This starts reading from cap.ts after seeking 100MiB, then
         reads until end of file.
@@ -1488,21 +1481,21 @@ PROTOCOLS
 
         ::
 
-            mpv "archive://file.zip|video.mkv"
+            mplayer3 "archive://file.zip|video.mkv"
 
         This will play ``video.mkv`` in the archive file ``file.zip``.
 
 PSEUDO GUI MODE
 ===============
 
-mpv has no official GUI, other than the OSC (`ON SCREEN CONTROLLER`_), which
+mplayer3 has no official GUI, other than the OSC (`ON SCREEN CONTROLLER`_), which
 is not a full GUI and is not meant to be. However, to compensate for the lack
-of expected GUI behavior, mpv will in some cases start with some settings
+of expected GUI behavior, mplayer3 will in some cases start with some settings
 changed to behave slightly more like a GUI mode.
 
 Currently this happens only in the following cases:
 
-- if started using the ``mpv.desktop`` file on Linux (e.g. started from menus
+- if started using the ``mplayer3.desktop`` file on Linux (e.g. started from menus
   or file associations provided by desktop environments)
 - if started from explorer.exe on Windows (technically, if it was started on
   Windows, and all of the stdout/stderr/stdin handles are unset)
@@ -1526,7 +1519,7 @@ The profile is currently defined as follows:
 The ``pseudo-gui`` profile exists for compatibility. The options in the
 ``pseudo-gui`` profile are applied unconditionally. In addition, the profile
 makes sure to enable the pseudo-GUI mode, so that ``--profile=pseudo-gui``
-works like in older mpv releases:
+works like in older mplayer3 releases:
 
 ::
 
@@ -1536,7 +1529,7 @@ works like in older mpv releases:
 .. warning::
 
     Currently, you can extend the ``pseudo-gui`` profile in the config file the
-    normal way. This is deprecated and will be removed in future mpv releases.
+    normal way. This is deprecated and will be removed in future mplayer3 releases.
 
     As an alternative, a conditional autoprofile can be used instead:
 
@@ -1588,18 +1581,18 @@ ENVIRONMENT VARIABLES
 =====================
 
 There are a number of environment variables that can be used to control the
-behavior of mpv.
+behavior of mplayer3.
 
 ``HOME``, ``XDG_CONFIG_HOME``
-    Used to determine mpv config directory. If ``XDG_CONFIG_HOME`` is not set,
-    ``$HOME/.config/mpv`` is used.
+    Used to determine mplayer3 config directory. If ``XDG_CONFIG_HOME`` is not set,
+    ``$HOME/.config/mplayer3`` is used.
 
-    ``$HOME/.mpv`` is always added to the list of config search paths with a
+    ``$HOME/.mplayer3`` is always added to the list of config search paths with a
     lower priority.
 
 ``MPV_HOME``
-    Directory where mpv looks for user settings. Overrides ``HOME``, and mpv
-    will try to load the config file as ``$MPV_HOME/mpv.conf``.
+    Directory where mplayer3 looks for user settings. Overrides ``HOME``, and mplayer3
+    will try to load the config file as ``$MPV_HOME/mplayer3.conf``.
 
 ``MPV_VERBOSE`` (see also ``-v`` and ``--msg-level``)
     Set the initial verbosity level across all message modules (default: 0).
@@ -1690,12 +1683,12 @@ libdvdcss:
 EXIT CODES
 ==========
 
-Normally **mpv** returns 0 as exit code after finishing playback successfully.
+Normally **mplayer3** returns 0 as exit code after finishing playback successfully.
 If errors happen, the following exit codes can be returned:
 
-    :1: Error initializing mpv. This is also returned if unknown options are
-        passed to mpv.
-    :2: The file passed to mpv couldn't be played. This is somewhat fuzzy:
+    :1: Error initializing mplayer3. This is also returned if unknown options are
+        passed to mplayer3.
+    :2: The file passed to mplayer3 couldn't be played. This is somewhat fuzzy:
         currently, playback of a file is considered to be successful if
         initialization was mostly successful, even if playback fails
         immediately after initialization.
@@ -1711,7 +1704,7 @@ input command can take an exit code: in this case, that exit code is returned.
 OPTICAL DRIVES
 ==============
 
-Depending on the OS, mpv will choose a different disc device by default.
+Depending on the OS, mplayer3 will choose a different disc device by default.
 This applies for all optical disc playback (CDDA, DVD, and BD).
 
 ======= =============
@@ -1732,36 +1725,36 @@ For Windows-specifics, see `FILES ON WINDOWS`_ section.
 
 All configuration files should be encoded in UTF-8.
 
-``/usr/local/etc/mpv/mpv.conf``
-    mpv system-wide settings (depends on ``--prefix`` passed to configure - mpv
-    in default configuration will use ``/usr/local/etc/mpv/`` as config
-    directory, while most Linux distributions will set it to ``/etc/mpv/``).
+``/usr/local/etc/mplayer3/mplayer3.conf``
+    mplayer3 system-wide settings (depends on ``--prefix`` passed to configure - mplayer3
+    in default configuration will use ``/usr/local/etc/mplayer3/`` as config
+    directory, while most Linux distributions will set it to ``/etc/mplayer3/``).
 
-``~/.cache/mpv``
-    The standard cache directory. Certain options within mpv may cause it to write
+``~/.cache/mplayer3``
+    The standard cache directory. Certain options within mplayer3 may cause it to write
     cache files to disk. This can be overridden by environment variables, in
     ascending order:
 
     :1: If ``$XDG_CACHE_HOME`` is set, then the derived cache directory
-        will be ``$XDG_CACHE_HOME/mpv``.
+        will be ``$XDG_CACHE_HOME/mplayer3``.
     :2: If ``$MPV_HOME`` is set, then the derived cache directory will be
        ``$MPV_HOME``.
 
-    If the directory does not exist, mpv will try to create it automatically.
+    If the directory does not exist, mplayer3 will try to create it automatically.
 
-``~/.config/mpv``
+``~/.config/mplayer3``
     The standard configuration directory. This can be overridden by environment
     variables, in ascending order:
 
     :1: If ``$XDG_CONFIG_HOME`` is set, then the derived configuration directory
-        will be ``$XDG_CONFIG_HOME/mpv``.
+        will be ``$XDG_CONFIG_HOME/mplayer3``.
     :2: If ``$MPV_HOME`` is set, then the derived configuration directory will be
        ``$MPV_HOME``.
 
     If this directory, nor the original configuration directory (see below) do
-    not exist, mpv tries to create this directory automatically.
+    not exist, mplayer3 tries to create this directory automatically.
 
-``~/.mpv/``
+``~/.mplayer3/``
     The original (pre 0.5.0) configuration directory. It will continue to be
     read if present. If this directory is present and the standard configuration
     directory is not present, then cache files and watch later config files will
@@ -1773,27 +1766,27 @@ All configuration files should be encoded in UTF-8.
     fully migrate to the standard directory and a warning will be shown in
     this situation.
 
-``~/.config/mpv/mpv.conf``
-    mpv user settings (see `CONFIGURATION FILES`_ section)
+``~/.config/mplayer3/mplayer3.conf``
+    mplayer3 user settings (see `CONFIGURATION FILES`_ section)
 
-``~/.config/mpv/input.conf``
+``~/.config/mplayer3/input.conf``
     key bindings (see `INPUT.CONF`_ section)
 
-``~/.config/mpv/fonts.conf``
-    Fontconfig fonts.conf that is customized for mpv. You should include system
-    fonts.conf in this file or mpv would not know about fonts that you already
+``~/.config/mplayer3/fonts.conf``
+    Fontconfig fonts.conf that is customized for mplayer3. You should include system
+    fonts.conf in this file or mplayer3 would not know about fonts that you already
     have in the system.
 
     Only available when libass is built with fontconfig.
 
-``~/.config/mpv/subfont.ttf``
+``~/.config/mplayer3/subfont.ttf``
     fallback subtitle font
 
-``~/.config/mpv/fonts/``
+``~/.config/mplayer3/fonts/``
     Default location for ``--sub-fonts-dir`` (see `Subtitles`_) and
     ``--osd-fonts-dir`` (see `OSD`_).
 
-``~/.config/mpv/scripts/``
+``~/.config/mplayer3/scripts/``
     All files in this directory are loaded as if they were passed to the
     ``--script`` option. They are loaded in alphabetical order.
 
@@ -1801,7 +1794,7 @@ All configuration files should be encoded in UTF-8.
 
     See `Script location`_ for details.
 
-``~/.local/state/mpv/watch_later/``
+``~/.local/state/mplayer3/watch_later/``
     Contains temporary config files needed for resuming playback of files with
     the watch later feature. See for example the ``Q`` key binding, or the
     ``quit-watch-later`` input command.
@@ -1809,7 +1802,7 @@ All configuration files should be encoded in UTF-8.
     This can be overridden by environment variables, in ascending order:
 
     :1: If ``$XDG_STATE_HOME`` is set, then the derived watch later directory
-        will be ``$XDG_STATE_HOME/mpv/watch_later``.
+        will be ``$XDG_STATE_HOME/mplayer3/watch_later``.
     :2: If ``$MPV_HOME`` is set, then the derived watch later directory will be
        ``$MPV_HOME/watch_later``.
 
@@ -1821,36 +1814,36 @@ All configuration files should be encoded in UTF-8.
     ``--write-filename-in-watch-later-config`` option, and the player will
     add the media filename to the contents of the resume config file.
 
-``~/.config/mpv/script-opts/osc.conf``
+``~/.config/mplayer3/script-opts/osc.conf``
     This is loaded by the OSC script. See the `ON SCREEN CONTROLLER`_ docs
     for details.
 
     Other files in this directory are specific to the corresponding scripts
-    as well, and the mpv core doesn't touch them.
+    as well, and the mplayer3 core doesn't touch them.
 
 FILES ON WINDOWS
 ================
 
 On win32 (if compiled with MinGW, but not Cygwin), the default config file
-locations are different. They are generally located under ``%APPDATA%/mpv/``.
-For example, the path to mpv.conf is ``%APPDATA%/mpv/mpv.conf``, which maps to
+locations are different. They are generally located under ``%APPDATA%/mplayer3/``.
+For example, the path to mplayer3.conf is ``%APPDATA%/mplayer3/mplayer3.conf``, which maps to
 a system and user-specific path, for example
 
-    ``C:\users\USERNAME\AppData\Roaming\mpv\mpv.conf``
+    ``C:\users\USERNAME\AppData\Roaming\mplayer3\mplayer3.conf``
 
-You can find the exact path by running ``echo %APPDATA%\mpv\mpv.conf`` in cmd.exe.
+You can find the exact path by running ``echo %APPDATA%\mplayer3\mplayer3.conf`` in cmd.exe.
 
 Other config files (such as ``input.conf``) are in the same directory. See the
 `FILES`_ section above.
 
-The cache directory is located at ``%LOCALAPPDATA%/mpv/cache``.
+The cache directory is located at ``%LOCALAPPDATA%/mplayer3/cache``.
 
-The watch_later directory is located at ``%LOCALAPPDATA%/mpv/watch_later``.
+The watch_later directory is located at ``%LOCALAPPDATA%/mplayer3/watch_later``.
 
 The environment variable ``$MPV_HOME`` completely overrides these, like on
 UNIX.
 
-If a directory named ``portable_config`` next to the mpv.exe exists, all
+If a directory named ``portable_config`` next to the mplayer3.exe exists, all
 config will be loaded from this directory only. Watch later config files and
 cache files are written to this directory as well. (This exists on Windows
 only and is redundant with ``$MPV_HOME``. However, since Windows is very
@@ -1858,23 +1851,23 @@ scripting unfriendly, a wrapper script just setting ``$MPV_HOME``, like you
 could do it on other systems, won't work. ``portable_config`` is provided for
 convenience to get around this restriction.)
 
-Config files located in the same directory as ``mpv.exe`` are loaded with
+Config files located in the same directory as ``mplayer3.exe`` are loaded with
 lower priority. Some config files are loaded only once, which means that
 e.g. of 2 ``input.conf`` files located in two config directories, only the
 one from the directory with higher priority will be loaded.
 
-A third config directory with the lowest priority is the directory named ``mpv``
-in the same directory as ``mpv.exe``. This used to be the directory with the
+A third config directory with the lowest priority is the directory named ``mplayer3``
+in the same directory as ``mplayer3.exe``. This used to be the directory with the
 highest priority, but is now discouraged to use and might be removed in the
 future.
 
-Note that mpv likes to mix ``/`` and ``\`` path separators for simplicity.
+Note that mplayer3 likes to mix ``/`` and ``\`` path separators for simplicity.
 kernel32.dll accepts this, but cmd.exe does not.
 
 FILES ON MACOS
 ==============
 
-On macOS the watch later directory is located at ``~/.config/mpv/watch_later/``
-and the cache directory is set to ``~/Library/Caches/io.mpv/``. These directories
+On macOS the watch later directory is located at ``~/.config/mplayer3/watch_later/``
+and the cache directory is set to ``~/Library/Caches/io.mplayer3/``. These directories
 can't be overwritten by environment variables.
 Everything else is the same as `FILES`_.

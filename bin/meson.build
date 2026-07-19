@@ -1,4 +1,4 @@
-project('mpv3',
+project('mplayer3-bin',
         'c',
         license: ['GPL2+', 'LGPL2.1+'],
         license_files: ['LICENSE.GPL', 'LICENSE.LGPL'],
@@ -1692,13 +1692,13 @@ endif
 
 
 # manpages
-manpage = 'DOCS/man/mpv.rst'
+manpage = 'DOCS/man/mplayer3.rst'
 rst2man = find_program('rst2man', 'rst2man.py', required: get_option('manpage-build'))
 if rst2man.found()
     mandir = get_option('mandir')
     custom_target('manpages',
         input: manpage,
-        output: 'mpv.1',
+        output: 'mplayer3.1',
         command: [
           docutils_wrapper, rst2man,
           '--record-dependencies', '@DEPFILE@',
@@ -1734,16 +1734,16 @@ if rst2pdf.found()
     datadir = get_option('datadir')
     custom_target('pdf-manpages',
         input: manpage,
-        output: 'mpv.pdf',
+        output: 'mplayer3.pdf',
         command: [
             docutils_wrapper, rst2pdf,
             '-c', '-b', '1', '--repeat-table-rows',
             dependency_file ? ['--record-dependencies', '@DEPFILE@'] : [],
             '@INPUT@', '-o', '@OUTPUT@'],
-        depfile: 'mpv.pdf.dep',
+        depfile: 'mplayer3.pdf.dep',
         install: true,
         install_tag: 'doc',
-        install_dir: join_paths(datadir, 'doc', 'mpv')
+        install_dir: join_paths(datadir, 'doc', 'mplayer3')
     )
 endif
 
@@ -1778,7 +1778,7 @@ sys.stdout.write(features)
 '''
 feature_str = run_command(python, '-c', feature_sort, feature_keys, check: true).stdout()
 conf_data.set_quoted('FULLCONFIG', feature_str)
-conf_data.set_quoted('MPV_CONFDIR', join_paths(get_option('prefix'), get_option('sysconfdir'), 'mpv'))
+conf_data.set_quoted('MPV_CONFDIR', join_paths(get_option('prefix'), get_option('sysconfdir'), 'mplayer3-bin'))
 conf_data.set_quoted('PLATFORM', host_machine.system())
 configure_file(output : 'config.h', configuration : conf_data)
 message('List of enabled features: ' + feature_str)
@@ -1812,7 +1812,7 @@ major = client_h_define.split('|')[0].split('<<')[0].strip('() ')
 minor = client_h_define.split('|')[1].strip('() ')
 client_api_version = major + '.' + minor + '.0'
 
-libmpv = library('mpv', sources, dependencies: dependencies, gnu_symbol_visibility: 'hidden',
+libmpv = library('mplayer3-bin', sources, dependencies: dependencies, gnu_symbol_visibility: 'hidden',
                  include_directories: incdir_public,
                  link_args: cc.get_supported_link_arguments(['-Wl,-Bsymbolic']),
                  version: client_api_version, install: get_option('libmpv'),
@@ -1839,7 +1839,7 @@ if get_option('cplayer')
     conf_files = ['etc/mpv.conf', 'etc/encoding-profiles.conf', 'etc/input.conf',
                   'etc/mplayer-input.conf', 'etc/restore-old-bindings.conf',
                   'etc/restore-osc-bindings.conf']
-    install_data(conf_files, install_tag: 'doc', install_dir: join_paths(datadir, 'doc', 'mpv'))
+    install_data(conf_files, install_tag: 'doc', install_dir: join_paths(datadir, 'doc', 'mplayer3-bin'))
 
     bash_install_dir = join_paths(datadir, 'bash-completion', 'completions')
     install_data('etc/mpv.bash-completion', install_tag: 'bash', install_dir: bash_install_dir, rename: 'mpv')
@@ -1864,13 +1864,13 @@ if get_option('cplayer')
     install_data('etc/mpv-symbolic.svg', install_tag: 'xdg',
                  install_dir: join_paths(hicolor_dir, 'symbolic', 'apps'))
 
-    mpv = executable('mpv3', main_fn_source, objects: libmpv.extract_all_objects(recursive: true), dependencies: dependencies,
+    mplayer3_bin = executable('mplayer3-bin', main_fn_source, objects: libmpv.extract_all_objects(recursive: true), dependencies: dependencies,
                      win_subsystem: get_option('win32-subsystem'), install: true)
 
     if win32
         if get_option('win32-subsystem') != 'console'
             wrapper_sources = 'osdep/win32-console-wrapper.c'
-            executable('mpv', wrapper_sources, c_args: ['-municode', '-fno-asynchronous-unwind-tables', '-fno-stack-protector', '-Os'],
+            executable('mplayer3_bin', wrapper_sources, c_args: ['-municode', '-fno-asynchronous-unwind-tables', '-fno-stack-protector', '-Os'],
                        link_args: ['-municode', '-nostartfiles', '-nodefaultlibs'],
                        override_options: ['b_sanitize=none'],
                        name_suffix: 'com', install: true)
@@ -1882,7 +1882,7 @@ if get_option('cplayer')
     if darwin
         osxbundle = find_program(join_paths(tools_directory, 'osxbundle.py'), required: true)
         custom_target('macos-bundle',
-            output: 'mpv.app',
+            output: 'mplayer3_bin.app',
             depends: version_h,
             command: [osxbundle, mpv, '@SOURCE_ROOT@', '-c', get_option('macos-bundle-category')],
         )
@@ -1892,7 +1892,7 @@ if get_option('cplayer')
         if meson.can_run_host_binaries()
             mpv_protocols = custom_target('mpv_protocols',
                 output: 'mpv_protocols',
-                command: [mpv, '--no-config','--list-protocols'],
+                command: [mplayer3_bin, '--no-config','--list-protocols'],
                 capture: true,
             )
             mpv_desktop_path = join_paths(source_root, 'etc', 'mpv.desktop')

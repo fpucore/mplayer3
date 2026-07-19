@@ -45,9 +45,9 @@ static void path_init(void)
 
     bool err = false;
     if (xdg_config && xdg_config[0]) {
-        err = err || MKPATH(mpv_home, "%s/mpv", xdg_config);
+        err = err || MKPATH(mpv_home, "%s/mplayer3", xdg_config);
     } else if (home && home[0]) {
-        err = err || MKPATH(mpv_home, "%s/.config/mpv", home);
+        err = err || MKPATH(mpv_home, "%s/.config/mplayer3", home);
     }
 
     // Maintain compatibility with old ~/.mpv
@@ -57,13 +57,13 @@ static void path_init(void)
     }
 
     if (xdg_cache && xdg_cache[0]) {
-        err = err || MKPATH(mpv_cache, "%s/mpv", xdg_cache);
+        err = err || MKPATH(mpv_cache, "%s/mplayer3", xdg_cache);
     } else if (home && home[0]) {
         err = err || MKPATH(mpv_cache, "%s/.cache/mpv", home);
     }
 
     if (xdg_state && xdg_state[0]) {
-        err = err || MKPATH(mpv_state, "%s/mpv", xdg_state);
+        err = err || MKPATH(mpv_state, "%s/mplayer3", xdg_state);
     } else if (home && home[0]) {
         err = err || MKPATH(mpv_state, "%s/.local/state/mpv", home);
     }

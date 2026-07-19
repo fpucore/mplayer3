@@ -18,6 +18,6 @@
 #include "common.h"
 #include "version.h"
 
-const char mpv_version[]  = "mpv3 " VERSION;
+const char mpv_version[]  = "mplayer3-bin " VERSION;
 const char mpv_builddate[] = BUILDDATE;
 const char mpv_copyright[] = MPVCOPYRIGHT;

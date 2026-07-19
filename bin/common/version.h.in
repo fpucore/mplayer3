@@ -1,4 +1,4 @@
-#define VERSION "3.0.0"
+#define VERSION "3.1.0"
 #define MPVCOPYRIGHT_T(C) "Copyright " C " 2000-2026 mpv/MPlayer/mplayer2/mplayer3 projects"
 #define MPVCOPYRIGHT MPVCOPYRIGHT_T("\xC2\xA9")
 #define MPVCOPYRIGHT_W MPVCOPYRIGHT_T(L"\xA9")

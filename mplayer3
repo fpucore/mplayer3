@@ -24,16 +24,24 @@ import subprocess
 import os
 import shutil
 
+CACHE_PLAYER_NAME = "utils/cache-util"
+CACHE_PLAYER_LOCATIONS = [
+    "/usr/local/lib/mplayer3/" + CACHE_PLAYER_NAME,
+    "/usr/lib/mplayer3/" + CACHE_PLAYER_NAME,
+]
+
 class MPlayer3:
     def __init__(self):
-        self.version_str = "mplayer3 v1.3"
-        self.mpv_path = shutil.which("mpv3")
+        self.version_str = "mplayer3 v3.1.0"
+        self.mpv_path = shutil.which("mplayer3-bin")
         self.args = sys.argv[1:]
         self.mpv_args = []
         self.files = []
         self.identify_mode = False
+        self.disk_cache = True    # disk cache (cache-util)
+        self.ram_cache = True     # ram cache
 
-        # MPlayer (Single-Dash) to MPV (Double-Dash) Map
+        # mplayer (single -) > mpv (double --) map
         # (mpv_opt, has_value)
         self.map = {
             "fs": ("fullscreen", False),
@@ -58,6 +66,27 @@ class MPlayer3:
             "sid": ("sid", True),
         }
 
+    def find_cache_player(self):
+        """Locate the bundled cache-util package."""
+        for loc in CACHE_PLAYER_LOCATIONS:
+            if os.path.isfile(loc) and os.access(loc, os.X_OK):
+                return loc
+        # Fall back to the same dir as this script
+        local = os.path.join(os.path.dirname(os.path.realpath(__file__)), CACHE_PLAYER_NAME)
+        if os.path.isfile(local) and os.access(local, os.X_OK):
+            return local
+        # Finally, search PATH
+        return shutil.which(CACHE_PLAYER_NAME)
+
+    def run_cache_player_command(self, command):
+        """Invoke the cache player's maintenance commands (--clear / --status)."""
+        cache_player = self.find_cache_player()
+        if not cache_player:
+            print("Error: mplayer3-cache-player not found.", file=sys.stderr)
+            sys.exit(1)
+        result = subprocess.run([cache_player, command])
+        sys.exit(result.returncode)
+
     def print_version(self):
         mpv_v = subprocess.run([self.mpv_path, "--version"], capture_output=True, text=True).stdout.splitlines()[0]
         print(f"{self.version_str}")
@@ -67,40 +96,57 @@ class MPlayer3:
     def print_help(self):
         print(f"{self.version_str}\n")
         print("Usage: mplayer3 [mplayer-options] [mpv-options] [file|url]")
-        
+
         print("\nClassic MPlayer Shorthand (Translated):")
         for m_opt, (mpv_opt, has_val) in self.map.items():
             suffix = " <val>" if has_val else ""
             print(f"  -{m_opt.ljust(12)} -> --{mpv_opt}{suffix}")
-        
+
         print("\nOther Standard Arguments:")
         print("  -v             Verbose (MPlayer traditional)")
         print("  -version       Print version info")
         print("  -identify      Show file properties (legacy format)")
-        
-        print("\nNative MPV Engine Options (Pass-through):")
-        # Optimization: Just show the first few lines of MPV help to keep it clean
+
+        print("\nCache Options:")
+        print("  Local files are played through a disk cache by default:")
+        print("  Playback starts instantly from the source while the file is copied to")
+        print("  ~/.cache/mplayer3-disk-cache/, then seamlessly switches to the cached")
+        print("  copy. The mplayer3 in-memory (RAM) cache is also enabled.")
+        print("  -no-disk-cache  Disable the disk cache (play directly via mplayer3)")
+        print("  -no-ram-cache   Disable the in-memory cache")
+        print("  -clear-cache    Delete all files from the disk cache and exit")
+        print("  -cache-status   Show disk cache location, entry count and size, then exit")
+        print("  (Double-dash forms --no-disk-cache, --no-ram-cache, --clear-cache")
+        print("   and --cache-status are also accepted.)")
+
+        print("\nRaw mplayer3-bin Engine Options (Pass-through):")
+        # Just show the first few lines of MPV3 help to keep it clean
         try:
             mpv_help = subprocess.run([self.mpv_path, "--help"], capture_output=True, text=True).stdout
-            # Extract the 'General Options' section from mpv
+            # Extract the 'General Options' section
             lines = [l for l in mpv_help.splitlines() if l.strip().startswith("--")]
-            for l in lines[:15]: 
+            for l in lines[:15]:
                 print(f"  {l}")
-            print("  ... (all other --mpv-style arguments are supported)")
+            print("  ... (all other --mpv-style arguments are supported too)")
         except:
-            print("  Check 'man mpv' for full engine documentation.")
+            print("  Check the man pages for full engine documentation.")
 
     def process(self):
-        if not self.mpv_path:
-            print("Error: mpv not found.", file=sys.stderr); sys.exit(1)
-        
-        if not self.args:
-            self.print_help(); sys.exit(0)
+        if "-clear-cache" in self.args or "--clear-cache" in self.args:
+            self.run_cache_player_command("--clear")
+        if "-cache-status" in self.args or "--cache-status" in self.args:
+            self.run_cache_player_command("--status")
 
         # Intercept mplayer3-specific Meta commands
-        if "-version" in self.args:
+        if any(a in self.args for a in ("-version", "--version", "-v", "--v")):
             self.print_version(); sys.exit(0)
         if "-help" in self.args or "--help" in self.args:
+            self.print_help(); sys.exit(0)
+
+        if not self.mpv_path:
+            print("Error: mplayer3-bin not found.", file=sys.stderr); sys.exit(1)
+
+        if not self.args:
             self.print_help(); sys.exit(0)
 
         idx = 0
@@ -109,10 +155,14 @@ class MPlayer3:
 
             if not arg.startswith("-"):
                 self.files.append(arg)
-            elif arg == "-v":
-                self.mpv_args.append("-v") # Keep single dash -v for mpv verbose
             elif arg == "-identify":
                 self.identify_mode = True
+            elif arg in ("-no-disk-cache", "--no-disk-cache"):
+                # Disable disk cache
+                self.disk_cache = False
+            elif arg in ("-no-ram-cache", "--no-ram-cache"):
+                # Disable ram cache
+                self.ram_cache = False
             else:
                 m_opt = arg.lstrip("-")
                 if m_opt in self.map:
@@ -129,11 +179,42 @@ class MPlayer3:
                     self.mpv_args.append(f"--{m_opt}")
             idx += 1
 
+        if not self.ram_cache:
+            # Disable ram cache
+            self.mpv_args.append("--cache=no")
+
         if self.identify_mode:
             # Simple identity emulation
             subprocess.run([self.mpv_path, "--identify", "--frames=0", "--vo=null"] + self.mpv_args + self.files)
+        elif self.use_disk_cache():
+            # Default path: Play through the disk cache. All argument translation
+            # is already done, so cache-util receives fully translated mpv3-style
+            # options and calls mplayer3-bin directly
+            cache_player = self.find_cache_player()
+            os.environ["MPV_BIN"] = self.mpv_path
+            os.execvp(cache_player, [cache_player, self.files[0]] + self.mpv_args)
         else:
             os.execvp(self.mpv_path, [self.mpv_path] + self.mpv_args + self.files)
+
+    def use_disk_cache(self):
+        """Decide whether playback should be routed through cache-util.
+
+        cache-util handles a single local media file. Anything else (URLs,
+        multiple files, playlists, no file at all) plays directly via the
+        mplayer3-bin engine, as does the explicit argument -no-disk-cache.
+        """
+        if not self.disk_cache:
+            return False
+        if len(self.files) != 1:
+            return False
+        target = self.files[0]
+        if "://" in target:  # network streams are not disk-cacheable here
+            return False
+        if not os.path.isfile(target):
+            return False
+        if any(a.startswith("--playlist") for a in self.mpv_args):
+            return False
+        return self.find_cache_player() is not None
 
 if __name__ == "__main__":
     MPlayer3().process()

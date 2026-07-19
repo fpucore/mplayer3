@@ -10,7 +10,7 @@ this script as well), such as no support for zero-copy hardware decoding.
 
 You need to manually gather and provide fingerprints for video frames and add
 them to a configuration file in script-opts/skip-logo.conf (the "script-opts"
-directory must be in the mpv configuration directory, typically ~/.config/mpv/).
+directory must be in the mpv configuration directory, typically ~/.config/mplayer3/).
 
 Example script-opts/skip-logo.conf:
 

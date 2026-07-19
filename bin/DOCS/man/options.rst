@@ -832,7 +832,7 @@ Program Behavior
 
 ``--load-scripts=<yes|no>``
     If set to ``no``, don't auto-load scripts from the ``scripts``
-    configuration subdirectory (usually ``~/.config/mpv/scripts/``).
+    configuration subdirectory (usually ``~/.config/mplayer3/scripts/``).
     (Default: ``yes``)
 
 ``--script=<filename>``, ``--scripts=file1.lua:file2.lua:...``
@@ -1118,11 +1118,11 @@ Watch Later
 
 ``--resume-playback=<yes|no>``
     Restore playback position from the ``watch_later`` configuration
-    subdirectory, usually ``~/.config/mpv/watch_later/`` (default: yes).
+    subdirectory, usually ``~/.config/mplayer3/watch_later/`` (default: yes).
 
 ``--resume-playback-check-mtime=<yes|no>``
     Only restore the playback position from the ``watch_later`` configuration
-    subdirectory (usually ``~/.config/mpv/watch_later/``) if the file's
+    subdirectory (usually ``~/.config/mplayer3/watch_later/``) if the file's
     modification time is the same as at the time of saving. This may prevent
     skipping forward in files with the same name which have different content.
     (Default: ``no``)
@@ -2967,7 +2967,7 @@ Subtitles
         - ``/path/to/video/``
         - ``/path/to/video/sub/``
         - ``/path/to/video/subtitles/``
-        -  the ``sub`` configuration subdirectory (usually ``~/.config/mpv/sub/``)
+        -  the ``sub`` configuration subdirectory (usually ``~/.config/mplayer3/sub/``)
 
     This is a path list option. See `List Options`_ for details.
 
@@ -4446,7 +4446,7 @@ Input
 
 ``--input-conf=<filename>``
     Specify input configuration file other than the default location in the mpv
-    configuration directory (usually ``~/.config/mpv/input.conf``).
+    configuration directory (usually ``~/.config/mplayer3/input.conf``).
 
 ``--input-default-bindings=<yes|no>``
     Enable default-level ("weak") key bindings (default: yes). These are bindings
@@ -5806,7 +5806,7 @@ DVB
 
 ``--dvbin-file=<filename>``
     Instructs mpv to read the channels list from ``<filename>``. The default is
-    in the mpv configuration directory (usually ``~/.config/mpv``) with the
+    in the mpv configuration directory (usually ``~/.config/mplayer3``) with the
     filename ``channels.conf.{sat,sat1,ter,ter1,cbl,atsc,isdbt}`` (based on your
     card type) or ``channels.conf`` as a last resort.
     For cards supporting multiple delivery systems of the same kind, i.e.

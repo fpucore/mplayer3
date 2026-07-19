@@ -3,26 +3,86 @@
 
 # mplayer3
 
-mplayer3 is a fork of the [MPlayer](http://www.mplayerhq.hu/) project, rebuilt
-on top of a bundled fork of [mpv](https://mpv.io/) (called **mpv3**). It
-preserves the classic MPlayer command-line interface while running on a modern,
-maintained playback engine — full hardware acceleration, current codec support,
-and no behavioural surprises.
+mplayer3 is forked from the [MPlayer](http://www.mplayerhq.hu/) and [mpv](https://mpv.io/) projects.
 
-One repo, one install, one philosophy: *mplayer in spirit, mpv in performance*.
+The project preserves the classic MPlayer command-line interface while running on a modern, properly 
+engineered and maintained playback engine, keeping full hardware acceleration, codec support and 
+MPlayer compatibility.
 
 Released under GNU GPL.
 
 ---
 
+## 🆕 What's New in v3.1.0
+ 
+### Persistent Disk Cache
+
+mplayer3 has introduced a dual-layer caching system that dramatically improves playback 
+experience for local source files, especially large files over slow or network-mounted storage.
+
+**How it works:**
+
+When you play a local source file, mplayer3 does two things simultaneously:
+
+1. **Disk cache** - The source file is silently copied to `~/.cache/mplayer3-disk-cache/` in 
+   the background while playback begins immediately from the source. Once caching is complete, 
+   playback seamlessly and invisibly switches to the cached copy. On repeat plays the cached copy
+   is used instantly - no wait, no re-caching.
+
+2. **RAM cache** - mplayer3 includes the in-memory (RAM) cache and is enabled on top of the
+   disk cache, giving the decoder a fast buffer to work from and eliminating micro-stutters
+   during playback.
+
+Together, these two layers mean: **instant start, smooth seeking, stutter-free playback,
+and fast repeat access** regardless of where the source file resides.
+
+> Network streams and URLs bypass the disk cache and play directly through the engine.
+> The RAM cache remains active for streams.
+
+**Cache management:**
+
+```bash
+# Check cache location, number of entries and total size on disk
+mplayer3 -cache-status
+
+# Delete all files from the disk cache
+mplayer3 -clear-cache
+```
+
+**Disabling the cache:**
+
+```bash
+# Play directly, bypassing the disk cache
+mplayer3 -no-disk-cache movie.mkv
+
+# Disable the in-memory (RAM) cache
+mplayer3 -no-ram-cache movie.mkv
+
+# Disable both caches, raw direct playback
+mplayer3 -no-disk-cache -no-ram-cache movie.mkv
+```
+
+**Double-dash forms are also accepted:**
+
+```bash
+mplayer3 --cache-status
+mplayer3 --clear-cache
+
+mplayer3 --no-disk-cache movie.mkv
+mplayer3 --no-ram-cache movie.mkv
+```
+
+---
+
 ## ✨ Features
 
+- ✅ Automatic arguments translation
 - ✅ Classic `mplayer` CLI syntax (`-fs`, `-ss`, `-vo`, etc.)
-- ✅ Automatic translation to `mpv3` arguments
 - ✅ Full support for native `mpv3` arguments (`--vo=gpu`, etc.)
+- ✅ Persistent disk cache for instant start and smooth repeat playback
+- ✅ Automatic dual-layer caching (Disk + RAM)
 - ✅ Zero performance overhead
 - ✅ Works with existing scripts and workflows
-- ✅ Clean fallback: unknown arguments are passed through to `mpv3`
 
 ---
 
@@ -30,25 +90,27 @@ Released under GNU GPL.
 
 ### Requirements
 
-- Python 3
+- `Python 3`
 - `meson` and `ninja`
-- A C compiler (e.g. `gcc` or `clang`) and the standard mpv build dependencies
-  (ffmpeg dev headers, libplacebo, libass, etc.). The installer does **not**
-  validate these — make sure they are in place before running it.
+- A C compiler (e.g. `gcc` or `clang`) and classic build dependencies (ffmpeg 
+  dev headers, libplacebo, libass, etc.). The installer does **not** validate 
+  these — make sure they are in place before running it.
 
 ### Install
 
 ```bash
-chmod +x mplayer3
-sudo python3 install_mplayer3.py
+git clone https://www.github.com/fpucore/mplayer3
+cd mplayer3
+sudo ./install_mplayer3.py
 ```
 
 This will:
-- Build the bundled `mpv3` engine from source (`mpv3/`) using meson, as your
-  invoking (non-root) user, and install it to `/usr/local/bin/mpv3`
+
+- Build the bundled `mplayer3` engine from source (`bin/`) using meson, as your
+  invoking (non-root) user, and install it to `/usr/local/bin/mplayer3`
 - Install `mplayer3` to `/usr/local/bin`
-- Create `~/.config/mpv/mpv.conf` (or safely append to an existing config)
-- Create `~/.config/mpv/input.conf` (if not already present)
+- Create `~/.config/mplayer3/mplayer3.conf` (or safely append to an existing config)
+- Create `~/.config/mplayer3/input.conf` (if not already present)
 
 ---
 
@@ -61,15 +123,18 @@ mplayer3 -ss 60 -endpos 120 video.mkv
 mplayer3 --vo=gpu video.mkv
 ```
 
-You can freely mix:
+With mplayer3 you can freely mix:
+
 - **MPlayer-style arguments** (`-fs`, `-ss`)
 - **MPV-style arguments** (`--hwdec=auto`)
+
+mplayer3 will perform an automatic translation of all arguments.
 
 ---
 
 ## 🔁 Compatibility
 
-mplayer3 translates common MPlayer arguments into mpv equivalents:
+mplayer3 translates common arguments into workable equivalents:
 
 ```
 -fs        →  --fullscreen
@@ -92,27 +157,24 @@ Unknown arguments are automatically passed through:
 
 mplayer3 is a **fork** — of both MPlayer (in spirit and CLI) and mpv (in code and engine).
 
-It exists to give the classic MPlayer command-line interface a long-term home on top of a modern, maintained playback engine:
+It exists to give the classic MPlayer command-line interface a long-term home on top of a modern, maintained engine:
 
-- The `mplayer3` CLI wrapper preserves the old `-fs`, `-ss`, `-vo` style arguments, translating them into mpv equivalents — with full pass-through for native mpv options.
-- The bundled **mpv3** engine is a fork of [mpv](https://mpv.io/), shipped in-tree so the whole stack builds and installs from a single source of truth.
-
-> *mplayer in spirit, mpv in performance*
+- The `mplayer3` CLI preserves the old `-fs`, `-ss`, `-vo` style arguments, translating them into workable equivalents — with full pass-through function.
+- The engine is shipped in-tree so the whole stack builds and installs from a single source of truth.
 
 ---
 
 ## ⚙️ Configuration
 
-mplayer3 uses standard `mpv` configuration:
+mplayer3 uses a standard configuration:
 
 ```
-~/.config/mpv/mpv.conf
-~/.config/mpv/input.conf
+~/.config/mplayer3/mplayer3.conf
+~/.config/mplayer3/input.conf
 ```
 
-The installer adds a small compatibility block (OSD, volume behavior, etc.),
-respecting existing user config strings by safely appending only missing
-settings and avoiding duplicates.
+The installer adds a small, tidy config block set, respecting existing user config 
+strings by safely appending only missing settings and avoiding duplicates.
 
 ---
 
@@ -122,7 +184,7 @@ settings and avoiding duplicates.
 mplayer3 -fs -ss 90 movie.mkv
 ```
 
-> Starts playback fullscreen at 1:30 — just like classic mplayer.
+> Starts playback fullscreen at 1:30 — just like classic MPlayer.
 
 ---
 
@@ -132,15 +194,15 @@ mplayer3 -fs -ss 90 movie.mkv
 
 ## 🙏 Credits & Legacy
 
-- **The MPlayer project** (2000–Present)
-- **The mplayer2 project** (2010–2015)
 - **The mpv project** (2012–Present)
+- **The mplayer2 project** (2010–2015)
+- **The MPlayer project** (2000–Present)
 
 ---
 
 ## 🧩 Status
 
-Version 1.3 (Stable)
+Version 3.1.0 (Stable)
 
 ---
 

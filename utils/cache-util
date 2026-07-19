@@ -1,0 +1,395 @@
+#!/usr/bin/env bash
+
+# cache-util - for mplayer3
+#
+# Inititiates local source file immediately while copying to a persistent
+# disk cache. When copy finished, mplayer3 seamlessly reloads cached file
+# at current playback position.
+
+#
+# Copyright (c) 2026, Chris McGimpsey-Jones (chrisjones.unixmen@gmail.com)
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <https://www.gnu.org/licenses/>.
+#
+
+set -Eeuo pipefail
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/mplayer3-disk-cache"
+MPV_BIN="${MPV_BIN:-mpv3}"
+
+# mpv ram cache
+MPV_CACHE_OPTIONS=(
+    --cache=yes
+    --cache-secs=60
+    --demuxer-max-bytes=512MiB
+    --demuxer-max-back-bytes=128MiB
+)
+
+MPV_SOCKET=""
+COPY_PID=""
+
+die() {
+    printf 'Error: %s\n' "$*" >&2
+    exit 1
+}
+
+usage() {
+    cat <<'EOF'
+Usage:
+  cache-util VIDEO_FILE [mpv options...]
+  cache-util --clear
+  cache-util --status
+
+Examples:
+  cache-util ~/Videos/movie.mkv
+  cache-util /mnt/nas/Films/movie.mp4 --fullscreen
+  cache-util --status
+  cache-util --clear
+EOF
+}
+
+require_command() {
+    command -v "$1" >/dev/null 2>&1 ||
+        die "Required command not found: $1"
+}
+
+cleanup() {
+    [[ -n "$COPY_PID" ]] && kill "$COPY_PID" 2>/dev/null || true
+    [[ -n "$MPV_SOCKET" ]] && rm -f -- "$MPV_SOCKET"
+}
+
+get_file_id() {
+    local file="$1"
+    local real_path size mtime
+
+    real_path="$(realpath -- "$file")"
+    size="$(stat --format='%s' -- "$file")"
+    mtime="$(stat --format='%Y' -- "$file")"
+
+    printf '%s\0%s\0%s' "$real_path" "$size" "$mtime" |
+        sha256sum |
+        awk '{print $1}'
+}
+
+cache_status() {
+    if [[ ! -d "$CACHE_DIR" ]]; then
+        printf 'Cache directory does not exist yet.\n'
+        exit 0
+    fi
+
+    local count size
+    count="$(find "$CACHE_DIR" -maxdepth 1 -type f -name '*.media.*' | wc -l)"
+    size="$(du -sh -- "$CACHE_DIR" | awk '{print $1}')"
+
+    printf 'Cache directory: %s\n' "$CACHE_DIR"
+    printf 'Cached videos:   %s\n' "$count"
+    printf 'Cache size:      %s\n' "$size"
+}
+
+clear_cache() {
+    if [[ -d "$CACHE_DIR" ]]; then
+        rm -rf -- "$CACHE_DIR"
+        printf 'Cache cleared: %s\n' "$CACHE_DIR"
+    else
+        printf 'Cache is already empty.\n'
+    fi
+}
+
+wait_for_mpv_socket() {
+    local attempts=0
+
+    while [[ ! -S "$MPV_SOCKET" ]]; do
+        sleep 0.1
+        attempts=$((attempts + 1))
+
+        # Wait up to 10 secs for mpv to create IPC socket
+        if (( attempts >= 100 )); then
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+switch_mpv_to_cached_file() {
+  local cached_file="$1"
+
+  python3 - "$MPV_SOCKET" "$cached_file" <<'PYTHON'
+import json
+import socket
+import sys
+import time
+
+socket_path = sys.argv[1]
+cached_file = sys.argv[2]
+
+
+class MPVIPC:
+    def __init__(self, socket_path):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.settimeout(15)
+        self.sock.connect(socket_path)
+        self.buffer = b""
+        self.next_request_id = 1
+        self.events = []
+
+    def close(self):
+        self.sock.close()
+
+    def send(self, command):
+        request_id = self.next_request_id
+        self.next_request_id += 1
+
+        message = {
+            "command": command,
+            "request_id": request_id,
+        }
+
+        self.sock.sendall(
+            (json.dumps(message) + "\n").encode("utf-8")
+        )
+
+        return request_id
+
+    def receive_message(self, timeout=15):
+        deadline = time.monotonic() + timeout
+
+        while True:
+            newline = self.buffer.find(b"\n")
+
+            if newline >= 0:
+                line = self.buffer[:newline]
+                self.buffer = self.buffer[newline + 1:]
+
+                if not line:
+                    continue
+
+                try:
+                    return json.loads(line.decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    continue
+
+            remaining = deadline - time.monotonic()
+
+            if remaining <= 0:
+                raise TimeoutError("Timed out waiting for IPC response")
+
+            self.sock.settimeout(remaining)
+            chunk = self.sock.recv(65536)
+
+            if not chunk:
+                raise ConnectionError("IPC socket was closed")
+
+            self.buffer += chunk
+
+    def wait_for_response(self, request_id, timeout=15):
+        deadline = time.monotonic() + timeout
+
+        while True:
+            remaining = deadline - time.monotonic()
+
+            if remaining <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for request {request_id}"
+                )
+
+            message = self.receive_message(remaining)
+
+            if message.get("event"):
+                self.events.append(message)
+                continue
+
+            if message.get("request_id") == request_id:
+                return message
+
+    def wait_for_event(self, event_name, timeout=30):
+        for index, event in enumerate(self.events):
+            if event.get("event") == event_name:
+                return self.events.pop(index)
+
+        deadline = time.monotonic() + timeout
+
+        while True:
+            remaining = deadline - time.monotonic()
+
+            if remaining <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for event: {event_name}"
+                )
+
+            message = self.receive_message(remaining)
+
+            if message.get("event") == event_name:
+                return message
+
+            if message.get("event"):
+                self.events.append(message)
+
+    def command(self, command, timeout=15):
+        request_id = self.send(command)
+        response = self.wait_for_response(request_id, timeout)
+
+        if response.get("error") != "success":
+            raise RuntimeError(
+                f"Prompt failure: {command!r}: "
+                f"{response.get('error', 'unknown error')}"
+            )
+
+        return response.get("data")
+
+    def get_property(self, name):
+        return self.command(["get_property", name])
+
+
+mpv = None
+
+try:
+    mpv = MPVIPC(socket_path)
+
+    paused = mpv.get_property("pause")
+    position = mpv.get_property("time-pos")
+
+    if position is None:
+        position = 0.0
+
+    mpv.command(["set_property", "pause", True])
+    mpv.command(["loadfile", cached_file, "replace"])
+    mpv.wait_for_event("file-loaded", timeout=30)
+    mpv.command(["seek", float(position), "absolute+exact"])
+    mpv.command(["set_property", "pause", bool(paused)])
+
+except (
+    ConnectionError,
+    FileNotFoundError,
+    OSError,
+    RuntimeError,
+    TimeoutError,
+) as error:
+    print(f"Failed to switch to cached file: {error}", file=sys.stderr)
+    sys.exit(1)
+
+finally:
+    if mpv is not None:
+        try:
+            mpv.close()
+        except OSError:
+            pass
+PYTHON
+}
+
+main() {
+    [[ $# -gt 0 ]] || {
+        usage
+        exit 1
+    }
+
+    case "$1" in
+        --help|-h)
+            usage
+            exit 0
+            ;;
+        --clear)
+            clear_cache
+            exit 0
+            ;;
+        --status)
+            cache_status
+            exit 0
+            ;;
+    esac
+
+    require_command "$MPV_BIN"
+    require_command python3
+    require_command sha256sum
+    require_command stat
+    require_command realpath
+    require_command cp
+    require_command find
+
+    local source_file="$1"
+    shift
+
+    [[ -f "$source_file" ]] || die "Not a regular file: $source_file"
+    [[ -r "$source_file" ]] || die "File is not readable: $source_file"
+
+    mkdir -p -- "$CACHE_DIR"
+
+    local key extension cached_file temporary_file source_size source_path
+    key="$(get_file_id "$source_file")"
+
+    extension="${source_file##*.}"
+    if [[ "$extension" == "$source_file" ]]; then
+        extension="media"
+    fi
+
+    cached_file="$CACHE_DIR/$key.media.$extension"
+    temporary_file="$CACHE_DIR/$key.partial"
+    source_size="$(stat --format='%s' -- "$source_file")"
+    source_path="$(realpath -- "$source_file")"
+
+    MPV_SOCKET=`mktemp -u "${XDG_RUNTIME_DIR:-/tmp}/mplayer3-disk-cache.XXXXXX.sock"`
+
+    trap cleanup EXIT INT TERM
+
+    # If source file is already fully cached, play cached version directly
+    if [[ -f "$cached_file" ]] &&
+       [[ "$(stat --format='%s' -- "$cached_file")" == "$source_size" ]]; then
+
+        printf 'Using cached copy:\n%s\n' "$cached_file"
+
+        exec "$MPV_BIN" \
+            "${MPV_CACHE_OPTIONS[@]}" \
+            "$@" \
+            "$cached_file"
+    fi
+
+    printf 'Playing source while caching in the background:\n%s\n' "$source_path"
+
+    # Start immediately with the original source file
+    "$MPV_BIN" \
+        "${MPV_CACHE_OPTIONS[@]}" \
+        --input-ipc-server="$MPV_SOCKET" \
+        "$@" \
+        "$source_file" &
+
+    local mpv_pid=$!
+
+    # Wait until control socket is created
+    wait_for_mpv_socket || true
+
+    # Copy source file in the background
+    (
+        rm -f -- "$temporary_file"
+
+        # Instant copy-on-write clone where supported; normal copy elsewhere
+        cp --reflink=auto --sparse=always --preserve=mode,timestamps \
+            -- "$source_file" "$temporary_file"
+
+        # Atomic rename: mplayer3 never sees an incomplete cache file
+        mv -- "$temporary_file" "$cached_file"
+
+        printf '\nCache complete. Switching playback to cached file.\n'
+
+        if [[ -S "$MPV_SOCKET" ]]; then
+            switch_mpv_to_cached_file "$cached_file"
+        fi
+    ) &
+
+    COPY_PID=$!
+
+    # Keep this wrapper running until mplayer3 is closed
+    wait "$mpv_pid"
+}
+
+main "$@"

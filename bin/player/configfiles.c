@@ -92,7 +92,7 @@ void mp_parse_cfgfiles(struct MPContext *mpctx)
 
     load_all_cfgfiles(mpctx, NULL, "encoding-profiles.conf");
 
-    load_all_cfgfiles(mpctx, section, "mpv.conf|config");
+    load_all_cfgfiles(mpctx, section, "mplayer3.conf|config");
 
     if (encoding) {
         m_config_set_profile(mpctx->mconfig, SECT_ENCODE, 0);
