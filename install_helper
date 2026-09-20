@@ -1,0 +1,39 @@
+#!/bin/hash
+source /usr/local/lib/h-linux-env.hash
+
+goto utils/pkgs
+
+#extract
+ace x $here/mplayer3-ofr.ace
+ace x $here/mplayer3-gstreamer.ace
+
+#set dirs
+newdir-dev $here/mofr
+newdir-dev $here/mgst
+
+goto mofr
+
+#compile mofr
+sh2c -f $up/mplayer3-ofr.hash -o $here/mplayer3-ofr.hash.x
+
+goto $up/mgst
+
+#compile mgst
+sh2c -f $up/mplayer3-gstreamer.hash -o $here/mplayer3-gstreamer.hash.x
+
+goto $up
+
+#stage compiled pkgs
+move-dev $here/mofr/mplayer3-ofr.hash.x /tmp
+move-dev $here/mgst/mplayer3-gstreamer.hash.x /tmp
+
+#install
+elevate install -s -m 755 /tmp/mplayer3-ofr.hash.x /usr/local/bin/mplayer3-ofr
+elevate install -s -m 755 /tmp/mplayer3-gstreamer.hash.x /usr/local/bin/mplayer3-gstreamer
+
+#clean up
+deletedir-dev $here/mofr; and deletedir-dev $here/mgst
+delete-dev $here/*.hash; and delete-dev $here/*.hash.x.c
+
+#confirm to user
+sayln; say "mplayer3: OptimFROG and GStreamer playback installed."; sayln

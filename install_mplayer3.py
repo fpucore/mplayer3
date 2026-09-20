@@ -26,10 +26,38 @@ import shutil
 import subprocess
 from pathlib import Path
 
+# --- Required dependencies ---
+REQUIRED_PACKAGES = [
+    "x86_64-vendor",
+    "xlibre2-xserver",
+    "ffmpeg-next",
+]
+
+missing = []
+
+for package in REQUIRED_PACKAGES:
+    result = subprocess.run(
+        ["pacman", "-Q", package],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode != 0:
+        missing.append(package)
+
+if missing:
+    print("\n[ERROR] Missing required dependencies:")
+    for package in missing:
+        print(f"  - {package}")
+    print("\nInstallation aborted.")
+    sys.exit(1)
+
+print("  [OK] Required dependencies    : all installed")
+
 # --- Paths ---
 APP_NAME        = "mplayer3"
 INSTALL_TARGET  = Path("/usr/local/bin") / APP_NAME
 SOURCE_SCRIPT   = Path(__file__).parent / APP_NAME
+INSTALL_HELPER  = Path(__file__).parent / "install_helper"
 
 # cache-util ((>v1.4) used by mplayer3 by default)
 CACHE_PLAYER_NAME   = "utils/cache-util"
@@ -176,6 +204,7 @@ def run_as_user(cmd, cwd, label):
     print(f"  [{label}] $ {' '.join(cmd)}   (as user: {sudo_user or os.environ.get('USER', 'current')})")
 
     env = os.environ.copy()
+    env["PKG_CONFIG_PATH"] = "/usr/local/lib/pkgconfig"
     if sudo_user:
         env["HOME"]    = str(REAL_HOME)
         env["USER"]    = sudo_user
@@ -216,6 +245,8 @@ def preflight():
         errors.append("Must be run as root. Use: sudo install_mplayer3.py")
     if not SOURCE_SCRIPT.exists():
         errors.append(f"Source script '{APP_NAME}' not found in the same directory as this installer.")
+    if not INSTALL_HELPER.exists():
+        errors.append("'install_helper' not found in the same directory as this installer.")
     if not CACHE_PLAYER_SOURCE.exists():
         errors.append(f"'{CACHE_PLAYER_PKG}' not found in the same directory as this installer.")
     if not (MPV3_SRC_DIR / "meson.build").exists():
@@ -291,13 +322,24 @@ def main():
     os.chmod(CACHE_PLAYER_TARGET, 0o755)
     print(f"  [OK] Installed: {CACHE_PLAYER_TARGET}")
 
+    # Exec install_helper
+    print(f"\n[8/8] Executing install_helper ...")
+    run_as_root([str(INSTALL_HELPER)], cwd=INSTALL_HELPER.parent, label="HELPER ")
+
     print(f"\nDone.")
     print(f"{'='*52}")
-    print(f"  mplayer3 is ready. Try:")
+    print(f"  mplayer3 is ready.")
+    print()
+    print(f"Try:")
     print(f"    mplayer3 -help")
     print(f"    mplayer3 -version")
     print(f"    mplayer3 -fs movie.mkv")
     print(f"    mplayer3 -cache-status")
+    print()
+    print(f"    mplayer3-ofr audio.ofr")
+    print()
+    print(f"    mplayer3-gstreamer video.mp4")
+    print(f"    mplayer3-gstreamer audio.mp3")
     print(f"{'='*52}\n")
 
 if __name__ == "__main__":
